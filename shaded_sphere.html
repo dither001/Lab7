@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+
+<p>
+<select id = "menu_shading">
+    <option value="0">Gouraud</option>
+    <option value="1">Phong</option>
+</select>
+<select id = "menu_shape">
+        <option value="0">Sphere</option>
+        <option value="1">Torus</option>
+</select>
+</p>
+<p>
+Light mode 
+<select id = "menu_light">
+        <option value="0">All</option>
+        <option value="1">Ambient Only</option>
+        <option value="2">Diffuse Only</option>
+        <option value="3">Specular Only</option>
+</select>
+Ambient Color
+<select id = "menu_ambient">
+        <option value="0">Gray</option>
+        <option value="1">Black</option>
+        <option value="2">Red</option>
+        <option value="3">Blue</option>
+</select>
+Diffuse Color
+<select id = "menu_diffuse">
+        <option value="0">Orange</option>
+        <option value="1">Green</option>
+        <option value="2">Magenta</option>
+        <option value="3">Yellow</option>
+</select>
+Specular Color
+<select id = "menu_specular">
+        <option value="0">White</option>
+        <option value="1">Red</option>
+        <option value="2">Blue</option>
+        <option value="3">Green</option>
+</select>
+</p>
+
+<script id="Gouraud-vertex-shader" type="x-shader/x-vertex">
+// add code here for Gouraud vertex shader 
+
+// assume both position and normal are in homogeneous form
+
+attribute vec4 vPosition;
+attribute vec4 vNormal;
+
+varying vec4 fColor;
+
+// ?
+uniform int lightModel;
+uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform vec4 lightPosition;
+uniform float shininess;
+uniform vec3 eye;
+uniform mat3 normalMatrix;
+
+
+void
+main()
+{
+    
+    // pos is vertex position in eye coordinates
+    
+    vec3 pos = (modelViewMatrix * vPosition).xyz;
+    
+    // vector from vertex position to light source
+    
+    vec3 L;
+    
+    // check for directional light
+    L = normalize( lightPosition.xyz - pos );
+
+    // Because the eye point the is at the origin
+    // the vector from the vertex position to the eye is
+    	
+    vec3 E = normalize( eye-pos );
+    
+    // halfway vector
+    
+    vec3 H = normalize( L + E );
+
+    // Transform vertex normal into eye coordinates
+    
+    vec3 N = normalize( normalMatrix*vNormal.xyz);
+
+    // Compute terms in the illumination equation
+    vec4 ambient = ambientProduct;
+
+    float Kd = max( dot(L, N), 0.0 );
+    vec4  diffuse = Kd*diffuseProduct;
+
+    float Ks = pow( max(dot(N, H), 0.0), shininess );
+    vec4  specular = Ks * specularProduct;
+    
+    // if the surface does not face the light source, there will be no contribution.
+    if( dot(L, N) < 0.0 ) {
+	specular = vec4(0.0, 0.0, 0.0, 1.0);
+    } 
+
+    gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+    
+    // attenuation 
+    float dis = length(lightPosition.xyz - pos);
+    float attenuation = 1.0/(1.0 + 0.01*dis*dis);
+
+    if (lightModel == 1)
+        fColor = ambient;
+    else if (lightModel == 2)
+        fColor = diffuse;
+    else if (lightModel == 3)
+        fColor = specular;
+    else
+        fColor = attenuation * (diffuse + specular) + ambient;
+
+    //fColor = ambient;
+    //fColor = diffuse;
+    //fColor = specular;
+    fColor = attenuation * (diffuse + specular) + ambient;
+    // without attenuation
+    //fColor = ambient + diffuse + specular;
+
+    fColor.a = 1.0;
+}
+
+</script>
+
+<script id="Gouraud-fragment-shader" type="x-shader/x-fragment">
+// add code here for Gouraud fragment shader 
+
+precision mediump float;
+
+varying vec4 fColor;
+
+void
+main()
+{
+
+    gl_FragColor = fColor;
+
+}
+
+</script>
+
+<script id="Phong-vertex-shader" type="x-shader/x-vertex">
+// add code here for Phong vertex shader 
+
+attribute vec4 vPosition;
+attribute vec4 vNormal;
+
+uniform mat3 normalMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+
+varying vec3 pos;
+varying vec3 normal_vertex;
+
+void main()
+{
+    pos = (modelViewMatrix * vPosition).xyz;
+    normal_vertex = normalMatrix*vNormal.xyz;
+    gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+    
+}
+
+</script>
+
+<script id="Phong-fragment-shader" type="x-shader/x-fragment">
+// add code here for Phong fragment shader 
+
+precision mediump float;
+
+uniform vec4 lightPosition;
+uniform vec3 eye;
+
+uniform vec4 ambientProduct;
+uniform vec4 diffuseProduct;
+uniform vec4 specularProduct;
+uniform float shininess;
+vec3 N, L, E;
+vec4 fColor;
+
+varying vec3 pos;
+varying vec3 normal_vertex;
+
+void main()
+{    
+    // check for directional light
+    L = normalize( lightPosition.xyz - pos );
+    
+    E =  normalize(eye-pos);
+    N = normalize( normal_vertex);
+    
+    vec3 H = normalize( L + E );
+    vec4 ambient = ambientProduct;
+
+    float Kd = max( dot(L, N), 0.0 );
+    vec4  diffuse = Kd*diffuseProduct;
+
+    float Ks = pow( max(dot(N, H), 0.0), shininess );
+    vec4  specular = Ks * specularProduct;
+    
+    //if the surface does not face the light source, there will be no contribution.
+    if( dot(L, N) < 0.0 ) specular = vec4(0.0, 0.0, 0.0, 1.0);
+
+    fColor = ambient + diffuse +specular;
+    fColor.a = 1.0;
+
+    gl_FragColor = fColor;
+}
+
+</script>
+
+<script type="text/javascript" src="../Common/webgl-utils.js"></script>
+<script type="text/javascript" src="../Common/initShaders.js"></script>
+<script type="text/javascript" src="../Common/MV.js"></script>
+<script type="text/javascript" src="shaded_sphere.js"></script>
+
+<body>
+
+
+<canvas id="gl-canvas" width="512" height="512">
+Oops ... your browser doesn't support the HTML5 canvas element
+</canvas>
+
+
+
+</body>
+</html>
