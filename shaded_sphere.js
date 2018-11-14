@@ -148,8 +148,8 @@ window.onload = function init() {
 
     // light model
     // add code here to receive the value of light model from the menu
-    var menu_shape = document.getElementById("menu_light");
-    menu_shape.addEventListener("change", function(){
+    var menu_light = document.getElementById("menu_light");
+    menu_light.addEventListener("change", function(){
         switch (menu_light.selectedIndex){
             case 0:
                 lightModel = 0;
@@ -194,8 +194,8 @@ window.onload = function init() {
 
     // diffuse color
     // add code here to set the diffuse color
-    var menu_ambient = document.getElementById("menu_diffuse");
-    menu_ambient.addEventListener("change", function(){
+    var menu_diffuse = document.getElementById("menu_diffuse");
+    menu_diffuse.addEventListener("change", function(){
         switch (menu_diffuse.selectedIndex){
             case 0:
                 lightDiffuse = orange;
@@ -218,8 +218,8 @@ window.onload = function init() {
 
     // specular color
     // add code here to set the specular color
-    var menu_ambient = document.getElementById("menu_specular");
-    menu_ambient.addEventListener("change", function(){
+    var menu_specular = document.getElementById("menu_specular");
+    menu_specular.addEventListener("change", function(){
         switch (menu_specular.selectedIndex){
             case 0:
                 lightSpecular = white;
@@ -244,6 +244,8 @@ window.onload = function init() {
 }
 
 function addpoints(shape) {
+    pointsArray = [];
+    normalsArray = [];
     var theta_data1, theta_data2, phi_data1, phi_data2;
     var r_data = 1.0;
 
@@ -284,7 +286,7 @@ function addpoints(shape) {
 
     }
     // torus
-    else if(shape = "torus"){
+    else if(shape == "torus"){
         // add code here to push positions and normals of vertices to pointArray and normalsArray
         for (var i = 0; i < nRows; ++i) {
             for (var j = 0; j < nColumns; ++j) {
